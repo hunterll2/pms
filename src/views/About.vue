@@ -1,0 +1,3 @@
+<template>
+    <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Nobis consequatur ab omnis adipisci excepturi, enim obcaecati quas vitae, facere laborum ullam fugit minus cumque! Fugit commodi eveniet deserunt illum perspiciatis!</p>
+</template>
