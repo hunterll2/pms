@@ -1,37 +1,99 @@
 <template>
-    <div class="d-flex align-items-center justify-content-center" style="height: 90vh;">
-        <form action="#" id="form_sign" novalidate style="width: 400px;">
-            <h1 class="display-6" id="h1_title">Sign In</h1>
-            <div class="mb-3">
+    <div class="d-flex align-items-center justify-content-center" style="height: 60vh;">
+        <form action="#" method="post" class="d-flex flex-column row-gap-3" id="form_sign" style="width: 400px;" novalidate>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="display-6" id="h1_title">Sign In</h1>
+                <div class="spinner-border text-primary d-none"></div>
+            </div>
+
+
+            <div class="form-floating">
+                <input type="email" class="form-control" name="input_email" id="input_email" placeholder="" required>
                 <label for="input_email">Email</label>
-                <input type="email" class="form-control" name="input_email" id="input_email">
             </div>
-            <div class="mb-3">
+
+            <div class="form-floating">
+                <input type="password" class="form-control" name="input_password" id="input_password" placeholder=""
+                    required>
                 <label for="input_email">Password</label>
-                <input type="password" class="form-control" name="input_password" id="input_password">
             </div>
-            
+
             <div id="div_alert" class="alert d-none"></div>
 
             <div class="d-flex justify-content-between align-items-center" id="div_signIn">
-                <a href="#" class="btn text-decoration-underline text-priamry" id="a_signUp">Sign Up</a>
+                <button type="button" class="btn btn-link" id="btn_signUp">Sign Up</button>
                 <input type="submit" class="btn btn-lg btn-success px-4" value="Sign In">
             </div>
-            <div class="d-flex justify-content-between align-items-center d-none"  id="div_signUp">
-                <a href="#" class="btn text-decoration-underline text-priamry" id="a_signIn">Sign In</a>
-                <input type="submit" class="btn btn-lg btn-success px-4" value="Sign Up">
+            <div class="d-flex justify-content-between align-items-center d-none" id="div_signUp">
+                <button type="button" class="btn btn-link" id="btn_signIn">Sign In</button>
+                <input type="submit" class="btn btn-lg btn-primary px-4" value="Sign Up">
             </div>
         </form>
     </div>
 </template>
 
 <script>
-function SignIn(email, password) {
-    console.log(email, password);
+import { auth } from "@/plugins/Firebase"
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { FirebaseError } from "firebase/app";
+
+async function SignIn(email, password) {
+    document.querySelector(".spinner-border").classList.remove("d-none")
+
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password)
+        location.replace("/")
+    } catch (error) {
+        if (!(error instanceof FirebaseError)) throw error
+
+        switch (error.code) {
+            case "auth/invalid-email":
+                DisplayAlert("danger", "Invalid email")
+                break
+            default:
+                DisplayAlert("danger", GetMessageFromErrorCode(error.code))
+        }
+    } finally {
+        document.querySelector(".spinner-border").classList.add("d-none")
+    }
 }
 
-function SignUp(email, password) {
-    console.log(email, password);
+async function SignUp(email, password) {
+    document.querySelector(".spinner-border").classList.remove("d-none")
+
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+        DisplayAlert("success", "Your account has been created successfuly. You can sign-in now.")
+    } catch (error) {
+        if (!(error instanceof FirebaseError)) throw error
+
+        switch (error.code) {
+            case "auth/email-already-in-use":
+                DisplayAlert("danger", "Email already in use")
+                break
+            case "auth/invalid-email":
+                DisplayAlert("danger", "Invalid email")
+                break
+            default:
+                DisplayAlert("danger", GetMessageFromErrorCode(error.code))
+        }
+    } finally {
+        document.querySelector(".spinner-border").classList.add("d-none")
+    }
+}
+
+function DisplayAlert(type, message) {
+    const div_alert = document.querySelector("#div_alert")
+    div_alert.className = `alert alert-${type}`
+    div_alert.textContent = message
+}
+
+function GetMessageFromErrorCode(errorCode) {
+    let errorMessage = errorCode.replace("auth/", "")
+    errorMessage = errorMessage.replaceAll("-", " ")
+    errorMessage = errorMessage.substring(0, 1).toUpperCase() + errorMessage.substring(1)
+    return errorMessage
 }
 
 export default {
@@ -39,8 +101,8 @@ export default {
         const form_sign = document.querySelector("#form_sign")
         const h1_title = document.querySelector("#h1_title")
 
-        const a_signUp = document.querySelector("#a_signUp")
-        const a_signIn = document.querySelector("#a_signIn")
+        const btn_signUp = document.querySelector("#btn_signUp")
+        const btn_signIn = document.querySelector("#btn_signIn")
 
         const div_signIn = document.querySelector("#div_signIn")
         const div_signUp = document.querySelector("#div_signUp")
@@ -48,18 +110,22 @@ export default {
         const div_alert = document.getElementById("div_alert")
 
         //
-        a_signUp.addEventListener("click", ()=> {
+        btn_signUp.addEventListener("click", () => {
             h1_title.textContent = "Sign Up"
 
             div_signIn.classList.add("d-none")
             div_signUp.classList.remove("d-none")
+
+            div_alert.classList.add("d-none")
         })
-        
-        a_signIn.addEventListener("click", ()=> {
+
+        btn_signIn.addEventListener("click", () => {
             h1_title.textContent = "Sign In"
 
             div_signIn.classList.remove("d-none")
             div_signUp.classList.add("d-none")
+
+            div_alert.classList.add("d-none")
         })
 
         //
