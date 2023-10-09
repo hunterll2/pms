@@ -12,7 +12,7 @@ import { RouterView } from 'vue-router'
 
         <div class="offcanvas-body d-block">
           <div class="list-group">
-            <a href="/projects" class="list-group-item list-group-item-action">
+            <a href="/" class="list-group-item list-group-item-action">
               <i class="fa-solid fa-diagram-project me-2"></i>
               Projects
             </a>
@@ -24,17 +24,13 @@ import { RouterView } from 'vue-router'
 
           <div class="ps-2 pt-3 mb-1 text-muted" data-only-admin>Admin</div>
           <div class="list-group" data-only-admin>
-            <a href="/3" class="list-group-item list-group-item-action">
+            <a href="/admin/users" class="list-group-item list-group-item-action">
               <i class="fa-solid fa-users-gear me-2"></i>
               Users
             </a>
-            <a href="/4" class="list-group-item list-group-item-action">
+            <a href="/admin/projects" class="list-group-item list-group-item-action">
               <i class="fa-solid fa-diagram-project me-2"></i>
               Projects
-            </a>
-            <a href="/5" class="list-group-item list-group-item-action">
-              <i class="fa-solid fa-chart-simple me-2"></i>
-              Stats
             </a>
           </div>
         </div>
@@ -65,12 +61,41 @@ import { RouterView } from 'vue-router'
 </template>
 
 <script>
+import { auth, db } from "@/plugins/Firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+
 export default {
   mounted() {
-    const els = document.querySelectorAll("[data-only-admin]")
-    for (const element of els) {
-      element.remove()
-    }
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        let isAdmin = false
+
+        const docRef = doc(db, `users/${user.uid}`);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const userData = docSnap.data()
+          isAdmin = userData.IsAdmin
+        }
+
+        const els = document.querySelectorAll("[data-only-admin]")
+        for (const element of els) {
+          if (isAdmin) {
+            element.classList.remove("d-none")
+          } else {
+            element.remove()
+          }
+        }
+      } else {
+        if (location.pathname !== "/SignPage") {
+          location.replace("/SignPage")
+        }
+      }
+    });
+
+
+
 
     const allLinksElements = document.querySelectorAll(".offcanvas-body a")
     const currentPathName = window.location.pathname
@@ -83,8 +108,9 @@ export default {
     }
 
     const btn_signOut = document.querySelector("#btn_signOut")
-    btn_signOut.addEventListener("click", function() {
-      location.replace("/SignPage")
+    btn_signOut.addEventListener("click", function () {
+      signOut(auth)
+      location.replace("/")
     })
 
     if (location.pathname === "/SignPage") {

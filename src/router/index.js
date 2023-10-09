@@ -9,14 +9,24 @@ const router = createRouter({
       component: () => import('../views/Home.vue')
     },
     {
-      path: '/about',
-      name: 'about',
-      component: () => import('../views/About.vue')
-    },
-    {
       path: '/SignPage',
       name: 'SignPage',
       component: () => import('../views/SignPage.vue')
+    },
+    {
+      path: '/admin/projects',
+      name: 'admin-projects',
+      component: () => import('../views/admin/Projects.vue')
+    },
+    {
+      path: '/admin/project',
+      name: 'admin-project',
+      component: () => import('../views/admin/Project.vue')
+    },
+    {
+      path: '/admin/users',
+      name: 'admin-users',
+      component: () => import('../views/admin/Users.vue')
     },
   ]
 })
