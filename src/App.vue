@@ -45,7 +45,7 @@ import { RouterView } from 'vue-router'
             <i class="fas fa-bars text-white py-1"></i>
           </button>
           <div class="ms-auto d-flex align-items-center column-gap-3">
-            <a href="#" class="text-decoration-none text-white">@Username</a>
+            <a href="#" class="text-decoration-none text-white" id="a_userName">@Username</a>
             <button class="btn btn-primary" id="btn_signOut">
               <i class="fa-solid fa-right-from-bracket"></i>
               Sign Out
@@ -69,6 +69,9 @@ export default {
   mounted() {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
+        const a_userName = document.querySelector("#a_userName")
+        a_userName.textContent = "@" + user.email.substring(0, user.email.indexOf("@"))
+
         let isAdmin = false
 
         const docRef = doc(db, `users/${user.uid}`);

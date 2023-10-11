@@ -1,44 +1,95 @@
 <template>
     <div class="card">
-        <h5 class="card-header py-3">Manage Users</h5>
+        <div class="card-header py-3 d-flex justify-content-between">
+            <h5>Manage Users</h5>
+            <div class="spinner-border text-primary d-none" id=""></div>
+        </div>
         <div class="card-body">
             <table class="table table-hover table-striped align-middle">
                 <thead class="">
                     <tr>
-                        <th width="100">UID</th>
-                        <th width="200">Username</th>
                         <th>Email</th>
-                        <th width="200"></th>
+                        <th class="text-end"></th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr v-for="n in 2" :key="'row-admin-' + n">
-                        <td>[uid]</td>
-                        <td>[username]</td>
-                        <td>[someone@example.com]</td>
-                        <td class="text-end">
-                            <button class="btn btn-danger">
-                                Set as User
-                            </button>
-                        </td>
-                    </tr>
-                    <tr v-for="n in 10" :key="n">
-                        <td>[uid]</td>
-                        <td>[username]</td>
-                        <td>[someone@example.com]</td>
-                        <td class="text-end">
-                            <button class="btn btn-primary">
-                                <!-- <i class="fas fa-user-tie me-1"></i> -->
-                                Set as Admin
-                            </button>
-                            &nbsp;
-                            <button class="btn btn-danger d-none">
-                                <i class="fas fa-user me-1"></i> Remove Admin
-                            </button>
-                        </td>
-                    </tr>
+                <tbody id="tbody_parentNode">
+
                 </tbody>
             </table>
         </div>
     </div>
 </template>
+
+<script>
+import { db } from "@/plugins/Firebase"
+import { collection, getDocs, query, updateDoc, doc, getDoc } from 'firebase/firestore';
+
+async function loadUsers(parentNode, usersQuery) {
+    const placeHolderHtml = `
+    <tr>
+        <td>%email%</td>
+        <td class="text-end">
+            %options%
+        </td>
+    </tr>
+    `
+
+    const setAsAdminBtn = "<button type='button' class='btn btn-sm btn-primary' data-user-id='%uid%'>Set As Admin</button>"
+    const setAsUserBtn = "<button type='button' class='btn btn-sm btn-secondary' data-user-id='%uid%'>Set As User</button>"
+
+    //
+    const usersSnapshot = await getDocs(usersQuery)
+
+    let child = parentNode.firstElementChild
+    while(child) {
+        child.remove()
+        child = parentNode.firstElementChild
+    }
+
+    for (let doc of usersSnapshot.docs) {
+        const user = doc.data()
+
+        let html = placeHolderHtml.replace("%email%", user.email)
+        if (user.isAdmin) {
+            html = html.replace("%options%", setAsUserBtn.replace("%uid%", doc.id))
+        } else {
+            html = html.replace("%options%", setAsAdminBtn.replace("%uid%", doc.id))
+        }
+        parentNode.insertAdjacentHTML("afterbegin", html)
+    }
+}
+
+export default {
+    async mounted() {
+        document.querySelector(".spinner-border").classList.remove("d-none")
+
+        const parentNode = document.querySelector("#tbody_parentNode")
+        const usersCollectionRef = collection(db, "users")
+        const usersQuery = query(usersCollectionRef)
+        
+        await loadUsers(parentNode, usersQuery)
+
+        document.querySelector(".spinner-border").classList.add("d-none")
+
+        parentNode.addEventListener("click", async e => {
+            if (e.target.tagName !== "BUTTON") return
+
+            document.querySelector(".spinner-border").classList.remove("d-none")
+
+            const btn = e.target
+
+            const docRef = doc(db, `users/${btn.dataset.userId}`)
+            const docSnapshot = await getDoc(docRef)
+            const user = docSnapshot.data()
+
+            await updateDoc(docRef, {
+                isAdmin: !user.isAdmin
+            })
+
+            await loadUsers(parentNode, usersQuery)
+
+            document.querySelector(".spinner-border").classList.add("d-none")
+        })
+    }
+}
+</script>

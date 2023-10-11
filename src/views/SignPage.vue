@@ -34,8 +34,9 @@
 </template>
 
 <script>
-import { auth } from "@/plugins/Firebase"
+import { auth, db } from "@/plugins/Firebase"
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, collection } from "firebase/firestore";
 import { FirebaseError } from "firebase/app";
 
 async function SignIn(email, password) {
@@ -64,6 +65,13 @@ async function SignUp(email, password) {
 
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+
+        const userDoc = doc(db, `users/${userCredential.user.uid}`)
+        await setDoc(userDoc, {
+            isAdmin: false,
+            email: userCredential.user.email
+        })
+        
         DisplayAlert("success", "Your account has been created successfuly. You can sign-in now.")
     } catch (error) {
         if (!(error instanceof FirebaseError)) throw error
