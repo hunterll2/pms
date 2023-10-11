@@ -1,19 +1,23 @@
 <template>
     <div class="card">
-        <div class="card-header py-3 d-flex justify-content-between">
-            <h5>Manage Users</h5>
-            <div class="spinner-border text-primary d-none" id=""></div>
-        </div>
+        <h5 class="card-header py-3">Manage Users</h5>
         <div class="card-body">
             <table class="table table-hover table-striped align-middle">
                 <thead class="">
                     <tr>
                         <th>Email</th>
-                        <th class="text-end"></th>
+                        <th class="text-end">Is Admin ?</th>
                     </tr>
                 </thead>
                 <tbody id="tbody_parentNode">
-
+                    <!-- <tr>
+                        <td>%email%</td>
+                        <td class="d-flex justify-content-end">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" class="form-check-input" checked>
+                            </div>
+                        </td>
+                    </tr> -->
                 </tbody>
             </table>
         </div>
@@ -22,26 +26,29 @@
 
 <script>
 import { db } from "@/plugins/Firebase"
-import { collection, getDocs, query, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
 
-async function loadUsers(parentNode, usersQuery) {
+async function loadUsers(parentNode, usersCollectionRef) {
     const placeHolderHtml = `
     <tr>
         <td>%email%</td>
-        <td class="text-end">
+        <td class="d-flex justify-content-end">
             %options%
         </td>
     </tr>
     `
 
-    const setAsAdminBtn = "<button type='button' class='btn btn-sm btn-primary' data-user-id='%uid%'>Set As Admin</button>"
-    const setAsUserBtn = "<button type='button' class='btn btn-sm btn-secondary' data-user-id='%uid%'>Set As User</button>"
+    const switchElement = `
+        <div class="form-check form-switch">
+            <input type="checkbox" class="form-check-input" data-user-id='%uid%' checked>
+        </div>
+    `
 
     //
-    const usersSnapshot = await getDocs(usersQuery)
+    const usersSnapshot = await getDocs(usersCollectionRef)
 
     let child = parentNode.firstElementChild
-    while(child) {
+    while (child) {
         child.remove()
         child = parentNode.firstElementChild
     }
@@ -50,33 +57,33 @@ async function loadUsers(parentNode, usersQuery) {
         const user = doc.data()
 
         let html = placeHolderHtml.replace("%email%", user.email)
-        if (user.isAdmin) {
-            html = html.replace("%options%", setAsUserBtn.replace("%uid%", doc.id))
-        } else {
-            html = html.replace("%options%", setAsAdminBtn.replace("%uid%", doc.id))
-        }
+
+        let switchElementHtml = switchElement.replace("%uid%", doc.id).replace("checked", user.isAdmin ? "checked" : "")
+        html = html.replace("%options%", switchElementHtml)
+
         parentNode.insertAdjacentHTML("afterbegin", html)
     }
 }
 
 export default {
     async mounted() {
-        document.querySelector(".spinner-border").classList.remove("d-none")
+        window.loading(true)
 
         const parentNode = document.querySelector("#tbody_parentNode")
         const usersCollectionRef = collection(db, "users")
-        const usersQuery = query(usersCollectionRef)
-        
-        await loadUsers(parentNode, usersQuery)
 
-        document.querySelector(".spinner-border").classList.add("d-none")
+        await loadUsers(parentNode, usersCollectionRef)
+
+        window.loading(false)
 
         parentNode.addEventListener("click", async e => {
-            if (e.target.tagName !== "BUTTON") return
+            if (e.target.type !== "checkbox") return
 
-            document.querySelector(".spinner-border").classList.remove("d-none")
+            window.loading(true)
 
             const btn = e.target
+
+            btn.disabled = true
 
             const docRef = doc(db, `users/${btn.dataset.userId}`)
             const docSnapshot = await getDoc(docRef)
@@ -86,9 +93,9 @@ export default {
                 isAdmin: !user.isAdmin
             })
 
-            await loadUsers(parentNode, usersQuery)
+            await loadUsers(parentNode, usersCollectionRef)
 
-            document.querySelector(".spinner-border").classList.add("d-none")
+            window.loading(false)
         })
     }
 }

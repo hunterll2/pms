@@ -20,6 +20,16 @@
   </div>
 </template>
 
+<script>
+export default {
+  mounted() {
+    window.loading(true)
+    //
+    // window.loading(false)
+  }
+}
+</script>
+
 <style>
 .card:hover .card-body {
   background-color: var(--bs-tertiary-bg) !important;

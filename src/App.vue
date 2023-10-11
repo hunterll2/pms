@@ -44,6 +44,8 @@ import { RouterView } from 'vue-router'
           <button class="navbar-toggler" data-bs-toggle="offcanvas" data-bs-target="#sidebar">
             <i class="fas fa-bars text-white py-1"></i>
           </button>
+          <div class="spinner-border text-white d-none"></div>
+
           <div class="ms-auto d-flex align-items-center column-gap-3">
             <a href="#" class="text-decoration-none text-white" id="a_userName">@Username</a>
             <button class="btn btn-primary" id="btn_signOut">
@@ -53,6 +55,7 @@ import { RouterView } from 'vue-router'
           </div>
         </div>
       </nav>
+
       <div class="container py-3">
         <RouterView />
       </div>
@@ -65,8 +68,14 @@ import { auth, db } from "@/plugins/Firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
+window.loading = function (status) {
+  const method = status ? "remove" : "add"
+  document.querySelector(".spinner-border").classList[method]("d-none")
+}
+
 export default {
-  mounted() {
+  async mounted() {
+    //
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         const a_userName = document.querySelector("#a_userName")
@@ -79,7 +88,7 @@ export default {
 
         if (docSnap.exists()) {
           const userData = docSnap.data()
-          isAdmin = userData.IsAdmin
+          isAdmin = userData.isAdmin
         }
 
         const els = document.querySelectorAll("[data-only-admin]")
@@ -96,9 +105,6 @@ export default {
         }
       }
     });
-
-
-
 
     const allLinksElements = document.querySelectorAll(".offcanvas-body a")
     const currentPathName = window.location.pathname
