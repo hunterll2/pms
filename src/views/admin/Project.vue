@@ -38,16 +38,21 @@
                 <div class="input-group">
                     <input type="file" name="input_uploadDocument" id="input_uploadDocument" class="form-control"
                         accept=".pdf">
-                    <button class="btn btn-success">Upload</button>
+                    <button type="button" class="btn btn-success" id="button_uploadDocument">Upload</button>
+                </div>
+
+                <div class="progress mt-2" id="div_uploadDocument_progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%">0%
+                    </div>
                 </div>
 
                 <table class="table table-striped mt-3">
-                    <tbody>
+                    <tbody id="tbody_documents_parentNode">
                         <tr>
                             <td>[document_name]</td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-primary">Preview</button>
-                                <button class="btn btn-sm btn-danger ms-1">Remove</button>
+                                <a class="btn btn-sm btn-primary">Preview</a>
+                                <button type="button" class="btn btn-sm btn-danger ms-1">Remove</button>
                             </td>
                         </tr>
                     </tbody>
@@ -72,11 +77,12 @@
 </template>
 
 <script>
-import { db } from "@/plugins/Firebase"
+import { db, storage } from "@/plugins/Firebase"
 import { collection, getDocs, updateDoc, doc, getDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseError } from "firebase/app";
+import { ref, uploadBytes, uploadBytesResumable, listAll, getDownloadURL, deleteObject } from "firebase/storage";
 
-function loadProject(form, project) {
+function bindProject(form, project) {
     form.name.value = project.name
     form.company.value = project.company
     form.duration.value = project.duration
@@ -105,22 +111,86 @@ function DisplayAlert(type, message) {
     div_alert.querySelector("i").className = `fas fa-${icon} fs-4 me-3`
 }
 
+async function loadProjectDocuments(parentNode, projectId) {
+    const storageRef = ref(storage, `${projectId}`)
+
+    const placeHolderHtml = `
+    <tr>
+        <td>%document_name%</td>
+        <td class="text-end">
+            <a href="%document_url%" target="_blank" class="btn btn-sm btn-primary">Preview</a>
+            <button type="button" class="btn btn-sm btn-danger ms-1" data-doc-name="%document_name%">Remove</button>
+        </td>
+    </tr>
+    `
+
+    //
+    const listResult = await listAll(storageRef)
+    const items = []
+    for (const itemRef of listResult.items) {
+        const downloadUrl = await getDownloadURL(itemRef)
+        items.push({
+            name: itemRef.name,
+            url: downloadUrl
+        })
+    }
+
+    let child = parentNode.firstElementChild
+    while (child) {
+        child.remove()
+        child = parentNode.firstElementChild
+    }
+
+    for (let item of items) {
+        let html = placeHolderHtml.replaceAll("%document_name%", item.name)
+        html = html.replace("%document_url%", item.url)
+
+        parentNode.insertAdjacentHTML("afterbegin", html)
+    }
+}
+
+async function uploadDocument(projectId, file, progressBar) {
+    const storageRef = ref(storage, `${projectId}/${file.name}`)
+
+    // await uploadBytes(storageRef, file)
+    // DisplayAlert("success", "File uploaded successfuly.")
+
+    const uploadTask = uploadBytesResumable(storageRef, file)
+
+    uploadTask.on("state_changed", (snapshot) => {
+        const progess = Math.floor((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+        progressBar.style.width = progess <= 0 ? "5%" : `${progess}%`
+        progressBar.textContent = `${progess}%`
+    }, error => {
+        DisplayAlert("danger", error.message)
+    }, () => {
+        DisplayAlert("success", "File uploaded successfuly.")
+        progressBar.style.width = "0%"
+    })
+}
+
+async function deleteDocument(projectId, fileName) {
+    const storageRef = ref(storage, `${projectId}/${fileName}`)
+    await deleteObject(storageRef)
+}
+
 export default {
     async mounted() {
-        window.loading(true)
 
         const urlParams = new URLSearchParams(location.search)
         const projectId = urlParams.get("id")
 
         const projectDocRef = doc(db, `projects/${projectId}`)
+        window.loading(true)
         const projectSnapshot = await getDoc(projectDocRef)
+        window.loading(false)
         const project = projectSnapshot.data()
 
         document.querySelector("h5").textContent = `Manage ${project.name}`
 
         const form = document.querySelector("form")
 
-        loadProject(form, project)
+        bindProject(form, project)
 
         form.addEventListener("submit", async e => {
             e.preventDefault()
@@ -148,7 +218,42 @@ export default {
             }
         })
 
+
+        // # Documents Uploads
+        const projectDocumentsParentNode = document.querySelector("#tbody_documents_parentNode")
+
+        window.loading(true, "Loading porject documents")
+        await loadProjectDocuments(projectDocumentsParentNode, projectSnapshot.id)
         window.loading(false)
+
+        projectDocumentsParentNode.addEventListener("click", async e => {
+            if (e.target.type !== "button") return
+            window.loading(true)
+            await deleteDocument(projectSnapshot.id, e.target.dataset.docName)
+            await loadProjectDocuments(projectDocumentsParentNode, projectSnapshot.id)
+            window.loading(false)
+        })
+
+        const progressBar = document.querySelector("#div_uploadDocument_progress").querySelector(".progress-bar")
+        form.button_uploadDocument.addEventListener("click", async e => {
+            const file = form.input_uploadDocument.files[0]
+
+            if (file === undefined) return
+
+            if (file.type !== "application/pdf") {
+                DisplayAlert("danger", "Select only PDF files.")
+                return
+            }
+
+            if ((file.size / 1024) > 1024) {
+                DisplayAlert("danger", "File can't be larger than 1MB.")
+                return
+            }
+
+            await uploadDocument(projectSnapshot.id, form.input_uploadDocument.files[0], progressBar)
+
+            progressBar.style.width = "0%"
+        })
     }
 }
 </script>

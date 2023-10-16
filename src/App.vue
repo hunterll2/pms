@@ -44,7 +44,10 @@ import { RouterView } from 'vue-router'
           <button class="navbar-toggler" data-bs-toggle="offcanvas" data-bs-target="#sidebar">
             <i class="fas fa-bars text-white py-1"></i>
           </button>
-          <div class="spinner-border text-white d-none"></div>
+          <div class="d-flex align-items-center text-white d-none" id="loading">
+              <div class="spinner-border"></div>
+              <span class="ms-2">Loading...</span>
+          </div>
 
           <div class="ms-auto d-flex align-items-center column-gap-3">
             <a href="#" class="text-decoration-none text-white" id="a_userName">@Username</a>
@@ -68,9 +71,10 @@ import { auth, db } from "@/plugins/Firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-window.loading = function (status) {
+window.loading = function (status, message = "Loading...") {
   const method = status ? "remove" : "add"
-  document.querySelector(".spinner-border").classList[method]("d-none")
+  document.querySelector("#loading").classList[method]("d-none")
+  document.querySelector("#loading > span").textContent = message
 }
 
 export default {
