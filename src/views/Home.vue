@@ -6,7 +6,7 @@
           <span class="placeholder col-6"></span>
         </div>
         
-        <svg class="bd-placeholder-img" width="100%" height="auto" style="aspect-ratio: 1/1;" xmlns="http://www.w3.org/2000/svg">
+        <svg class="bd-placeholder-img" width="100%" height="100%" style="aspect-ratio: 1/1;" xmlns="http://www.w3.org/2000/svg">
           <title>Placeholder</title>
           <rect width="100%" height="100%" fill="#868e96"></rect>
         </svg>
@@ -26,7 +26,7 @@
           <span class="placeholder col-6"></span>
         </div>
         
-        <svg class="bd-placeholder-img" width="100%" height="auto" style="aspect-ratio: 1/1;" xmlns="http://www.w3.org/2000/svg">
+        <svg class="bd-placeholder-img" width="100%" height="100%" style="aspect-ratio: 1/1;" xmlns="http://www.w3.org/2000/svg">
           <title>Placeholder</title>
           <rect width="100%" height="100%" fill="#868e96"></rect>
         </svg>
@@ -46,7 +46,7 @@
           <span class="placeholder col-6"></span>
         </div>
         
-        <svg class="bd-placeholder-img" width="100%" height="auto" style="aspect-ratio: 1/1;" xmlns="http://www.w3.org/2000/svg">
+        <svg class="bd-placeholder-img" width="100%" height="100%" style="aspect-ratio: 1/1;" xmlns="http://www.w3.org/2000/svg">
           <title>Placeholder</title>
           <rect width="100%" height="100%" fill="#868e96"></rect>
         </svg>
@@ -75,7 +75,7 @@ async function loadProjects(parentNode, projectsCollectionRef) {
             <div class="card-header text-bg-primary bg-gradient">
               %project_name%
             </div>
-            <img src="https://placehold.co/100" alt="alt" width="100%" height="auto" style="aspect-ratio: 1/1;">
+            <img src="%project_image%" alt="alt" width="100%" height="auto" style="aspect-ratio: 1/1;">
             <div class="card-body">
               <p class="card-text">
                 %project_description%
@@ -100,6 +100,7 @@ async function loadProjects(parentNode, projectsCollectionRef) {
 
     let html = placeHolderHtml.replace("%project_name%", project.name)
     html = html.replace("%project_description%", project.description)
+    html = html.replace("%project_image%", project.imageUrl ? project.imageUrl : "https://placehold.co/100")
 
     html = html.replaceAll("%project_id%", doc.id)
 

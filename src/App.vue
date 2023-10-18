@@ -82,6 +82,13 @@ export default {
     //
     onAuthStateChanged(auth, async (user) => {
       if (user) {
+        if (!user.emailVerified) {
+          if (location.pathname !== "/verify_email" && location.pathname !== "/SignPage") {
+            location.replace("/verify_email")
+          }
+          return
+        }
+
         const a_userName = document.querySelector("#a_userName")
         a_userName.textContent = "@" + user.email.substring(0, user.email.indexOf("@"))
 
@@ -126,7 +133,8 @@ export default {
       location.replace("/")
     })
 
-    if (location.pathname === "/SignPage") {
+    // if user in "sign page" or "verify email page" hide navbar and sidebar
+    if (location.pathname === "/SignPage" || location.pathname === "/verify_email") {
       const signedOnlyElements = document.querySelectorAll("[data-only-signed]")
       for (const element of signedOnlyElements) {
         element.remove()

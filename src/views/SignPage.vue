@@ -1,7 +1,6 @@
 <template>
     <div class="d-flex align-items-center justify-content-center" style="height: 60vh;">
         <form action="#" method="post" class="d-flex flex-column row-gap-3" id="form_sign" style="width: 400px;" novalidate>
-
             <div class="d-flex justify-content-between align-items-center">
                 <h1 class="display-6" id="h1_title">Sign In</h1>
                 <div class="spinner-border text-primary d-none"></div>
@@ -35,7 +34,7 @@
 
 <script>
 import { auth, db } from "@/plugins/Firebase"
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, collection } from "firebase/firestore";
 import { FirebaseError } from "firebase/app";
 
@@ -71,8 +70,10 @@ async function SignUp(email, password) {
             isAdmin: false,
             email: userCredential.user.email
         })
+
+        await sendEmailVerification(userCredential.user)
         
-        DisplayAlert("success", "Your account has been created successfuly. You can sign-in now.")
+        DisplayAlert("success", "Your account has been created successfuly. Please check your email for the verification link.")
     } catch (error) {
         if (!(error instanceof FirebaseError)) throw error
 

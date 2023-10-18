@@ -30,6 +30,10 @@
                         <label for="description" class="form-label">Project description</label>
                         <textarea name="description" id="description" rows="10" class="form-control"></textarea>
                     </div>
+                    <div class="col-12 mt-2">
+                        <label for="image" class="form-label">Project Imae</label>
+                        <input type="file" name="image" id="image" class="form-control" accept=".jpg,.jpeg,.png">
+                    </div>
                 </div>
 
                 <h2 class="h6 mt-3">Project Documents</h2>
@@ -128,6 +132,8 @@ async function loadProjectDocuments(parentNode, projectId) {
     const listResult = await listAll(storageRef)
     const items = []
     for (const itemRef of listResult.items) {
+        if (itemRef.name === "image") continue
+        
         const downloadUrl = await getDownloadURL(itemRef)
         items.push({
             name: itemRef.name,
@@ -174,6 +180,13 @@ async function deleteDocument(projectId, fileName) {
     await deleteObject(storageRef)
 }
 
+async function uploadProjectImage(projectId, file) {
+    const imageRef = ref(storage, `${projectId}/image`)
+    await uploadBytes(imageRef, file)
+    const imageUrl = await getDownloadURL(imageRef)
+    return imageUrl
+}
+
 export default {
     async mounted() {
 
@@ -196,6 +209,24 @@ export default {
             e.preventDefault()
 
             window.loading(true)
+
+            // if suer choose image, upload it and then get its url
+            const projectImageFile = form.image.files[0]
+            let imageUrl = ""
+            if (projectImageFile) {
+                if (!["image/jpg", "image/jpeg", "image/png"].includes(projectImageFile.type)) {
+                    DisplayAlert("danger", "Project image must be jpg, jpeg, or png only.")
+                    window.loading(false)
+                    return
+                }
+                if ((projectImageFile.size / 1024) > 256) {
+                    DisplayAlert("danger", "Project image size must be less than 256kb.")
+                    window.loading(false)
+                    return
+                }
+                imageUrl = await uploadProjectImage(projectId, projectImageFile)
+            }
+
             try {
                 await updateDoc(projectDocRef, {
                     name: form.name.value,
@@ -203,6 +234,7 @@ export default {
                     duration: Number(form.duration.value),
                     cost: Number(form.cost.value),
                     description: form.description.value,
+                    imageUrl: imageUrl
                 })
 
                 DisplayAlert("success", "The changes has been saved successfuly.")

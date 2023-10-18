@@ -14,6 +14,11 @@ const router = createRouter({
       component: () => import('../views/SignPage.vue')
     },
     {
+      path: '/verify_email',
+      name: 'VerifyEmail',
+      component: () => import('../views/VerifyEmail.vue')
+    },
+    {
       path: '/admin/projects',
       name: 'admin-projects',
       component: () => import('../views/admin/Projects.vue')
