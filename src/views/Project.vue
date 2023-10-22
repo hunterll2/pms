@@ -102,17 +102,17 @@
                 <hr class="text-muted">
                 <div class="row">
                     <div class="col-md-9 col-6 fw-bold">Contract Sign Date</div>
-                    <div id="placeholder_contract_signDate" class="col-md-3 col-6">yyyy/MM/dd</div>
+                    <div id="contract_signDate" class="col-md-3 col-6">yyyy/MM/dd</div>
                 </div>
                 <hr class="text-muted">
                 <div class="row">
                     <div class="col-md-9 col-6 fw-bold">Contract Expiry date</div>
-                    <div id="placeholder_contract_expiryDate" class="col-md-3 col-6">yyyy/MM/dd</div>
+                    <div id="contract_expiryDate" class="col-md-3 col-6">yyyy/MM/dd</div>
                 </div>
                 <hr class="text-muted">
                 <div class="row">
                     <div class="col-md-9 col-6 fw-bold">Date receiving the project</div>
-                    <div id="placeholder_contract_doneDate" class="col-md-3 col-6">yyyy/MM/dd</div>
+                    <div id="contract_doneDate" class="col-md-3 col-6">yyyy/MM/dd</div>
                 </div>
             </div>
         </div>
@@ -124,33 +124,35 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-9 col-6">Number of bills paid</div>
-                    <div id="placeholder_bill_billsPaidCount" class="col-md-3 col-6">[N] Bill/s</div>
+                    <div id="bill_billsPaidCount" class="col-md-3 col-6">[N] Bill/s</div>
                 </div>
                 <hr class="text-muted">
                 <div class="row">
                     <div class="col-md-9 col-6">Number of bills remain</div>
-                    <div id="placeholder_bill_billsRemainCount" class="col-md-3 col-6">[N] Bill/s</div>
+                    <div id="bill_billsRemainCount" class="col-md-3 col-6">[N] Bill/s</div>
                 </div>
                 <hr class="text-muted">
                 <div class="row">
                     <div class="col-md-9 col-6">Amount of bills paid</div>
-                    <div id="placeholder_bill_billsPaidAmount" class="col-md-3 col-6">[N] SR</div>
+                    <div id="bill_billsPaidAmount" class="col-md-3 col-6">[N] SR</div>
                 </div>
                 <hr class="text-muted">
                 <div class="row">
                     <div class="col-md-9 col-6">Amount of bills remain</div>
-                    <div id="placeholder_bill_billsRemainAmount" class="col-md-3 col-6">[N] SR</div>
+                    <div id="bill_billsRemainAmount" class="col-md-3 col-6">[N] SR</div>
                 </div>
 
                 <form id="form_billPayment" action="#" class="alert-form my-5">
                     <div class="row align-items-center">
                         <div class="col text-center">
                             <label class="form-label">Bill amount</label>
-                            <div class="bill-amount fw-bold">1,000 SR</div>
+                            <br>
+                            <input type="text" name="amount" id="amount" class="fw-bold" value="1,000 SR" readonly>
                         </div>
                         <div class="col text-center">
                             <label class="form-label">Bill date</label>
-                            <div class="bill-date fw-bold">2023-04-20</div>
+                            <br>
+                            <input type="text" name="date" id="date" class="fw-bold" value="2023-04-20" readonly>
                         </div>
                         <div class="col text-center">
                             <input type="submit" value="Pay Now" class="btn btn-lg btn-primary">
@@ -189,23 +191,26 @@
 <script>
 import { auth, storage } from "@/plugins/firebase";
 import { ref, listAll, getDownloadURL } from "firebase/storage";
-import { GetDoc, AddDoc, SetDoc } from "@/helpers/firestore";
+import { GetDoc, GetDocs, AddDoc, SetDoc } from "@/helpers/firestore";
 import { Timestamp, addDoc, collection, setDoc } from "firebase/firestore";
 import moment from "moment"
+import { InsertChildrenIntoParentElement } from "@/helpers/DOM";
+import { GetDateString } from "@/helpers/common";
 
-window.moment = moment
+// bind project data
 
-async function loadProjectDocuments(parentNode, projectId) {
+function setProjectDetails(project) {
+    const { name, company, duration, cost, description } = project
+
+    document.querySelector("#project_name").textContent = name
+    document.querySelector("#project_company").textContent = company
+    document.querySelector("#project_duration").textContent = duration
+    document.querySelector("#project_cost").textContent = cost
+    document.querySelector("#project_description").textContent = description ? description : ""
+}
+
+async function setProjectDocuments(parentNodeId, projectId) {
     const storageRef = ref(storage, `${projectId}`)
-
-    const placeHolderHtml = `
-    <tr>
-        <td>%document_name%</td>
-        <td class="text-end">
-            <a href="%document_url%" target="_blank" class="btn btn-sm btn-primary">Preview</a>
-        </td>
-    </tr>
-    `
 
     //
     const listResult = await listAll(storageRef)
@@ -220,19 +225,49 @@ async function loadProjectDocuments(parentNode, projectId) {
         })
     }
 
-    let child = parentNode.firstElementChild
-    while (child) {
-        child.remove()
-        child = parentNode.firstElementChild
-    }
-
-    for (let item of items) {
-        let html = placeHolderHtml.replaceAll("%document_name%", item.name)
-        html = html.replace("%document_url%", item.url)
-
-        parentNode.insertAdjacentHTML("afterbegin", html)
-    }
+    InsertChildrenIntoParentElement(parentNodeId, items, (placeholderHtml, child) => {
+        placeholderHtml = placeholderHtml.replaceAll("%document_name%", child.name)
+        placeholderHtml = placeholderHtml.replaceAll("%document_url%", child.url)
+        return placeholderHtml
+    })
 }
+
+async function SetProjectContractDetails(projectId, userId) {
+    const userProjectContract = await GetDoc(`projects/${projectId}/signers/${auth.currentUser.uid}`)
+    const {signDate, receivingProjectDate, expiryDate} = userProjectContract
+    document.querySelector("#contract_signDate").textContent = GetDateString(signDate.toDate())
+    document.querySelector("#contract_doneDate").textContent = GetDateString(receivingProjectDate.toDate())
+    document.querySelector("#contract_expiryDate").textContent = GetDateString(expiryDate.toDate())
+}
+
+async function SetProjectBillsDetails(projectId, userId) {
+
+}
+
+async function SetProjectStatus(projectId, userId) {
+    const bills = await GetDocs(`projects/${projectId}/signers/${auth.currentUser.uid}/bills`)
+
+    const unpaidBills = bills.filter(bill => bill.payDate === undefined)
+    const paidBills = bills.filter(bill => bill.payDate !== undefined)
+    const lateUnpaidBills = unpaidBills.filter(bill => moment(bill.date.toDate()).isBefore(new Date()))
+
+    const progress = Math.floor((paidBills.length / bills.length) * 100)
+
+    let status = 2
+    // there's late bills ? then project in "stop" state (0)
+    if (lateUnpaidBills.length > 0) {
+        status = 0
+    } 
+    // there's still unpaid bills ? then project in "in progress" state (1)
+    else if (unpaidBills.length > 0) {
+        status = 1
+    }
+    
+    document.querySelector(`[data-project-status-${status}] .progress-bar`).style.width = progress + "%"
+    document.querySelector(`[data-project-status-${status}] .progress-bar`).textContent = progress + "%"
+}
+
+// opeartions
 
 async function SignProjectContract(projectId, userId) {
     const project = await GetDoc(`projects/${projectId}`)
@@ -279,19 +314,29 @@ export default {
 
         window.loading(true)
         const project = await GetDoc(`projects/${projectId}`)
-        console.log(project.id);
-        window.loading(false)
 
-        document.querySelector("#project_name").textContent = project.name
-        document.querySelector("#project_company").textContent = project.company
-        document.querySelector("#project_duration").textContent = project.duration
-        document.querySelector("#project_cost").textContent = project.cost
-        document.querySelector("#project_description").textContent = project.description ? project.description : ""
+        // setProjectDetails(project)
 
-        const tbody_projectDocuments = document.querySelector("#tbody_projectDocuments")
         window.loading(true, "Loading project documents...")
-        // await loadProjectDocuments(tbody_projectDocuments, projectId)
+        // await setProjectDocuments("tbody_projectDocuments", projectId)
         window.loading(false)
+
+        // # check if user already sign the contract of the project or not
+        let isCurrentUserSignedTheProject = await GetDoc(`projects/${projectId}/signers/${auth.currentUser.uid}`) !== null
+
+        const onlySignedElements = document.querySelectorAll("[data-signed-only]")
+        const onlyNotSignedElements = document.querySelectorAll("[data-not-signed-only]")
+
+        if (isCurrentUserSignedTheProject) {
+            for (const element of onlyNotSignedElements) element.remove()
+            for (const element of onlySignedElements) element.classList.remove("d-none")
+
+            await SetProjectContractDetails(projectId, auth.currentUser.uid)
+            await SetProjectBillsDetails(projectId, auth.currentUser.uid)
+            await SetProjectStatus(projectId, auth.currentUser.uid)
+        } else {
+            for (const element of onlySignedElements) element.remove()
+        }
 
         // apply button
         const btn_applyToProject = document.querySelector("#btn_applyToProject")
