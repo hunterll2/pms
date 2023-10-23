@@ -12,3 +12,16 @@ import moment from "moment"
 export function GetDateString(date) {
     return moment(date).format("YYYY/MM/DD")
 }
+
+/**
+ * Formats a number into a currency string in Saudi Riyal (SR).
+ *
+ * @param {number} number - The number to be formatted.
+ * @returns {string} The formatted currency string.
+ *
+ * @example
+ * GetCurrency(1234567); // Returns "1,234,567 SR"
+ */
+export function GetCurrency(number) {
+    return new Intl.NumberFormat("en-US").format(number) + " SR"
+}

@@ -55,7 +55,7 @@
             <h5 class="card-header">Status</h5>
             <div class="card-body">
                 <!-- not paid -->
-                <div id="div_alert_stoped" class="alert alert-danger" data-project-status-0>
+                <div id="div_alert_stoped" class="alert alert-danger d-none" data-project-status-0>
                     <div class="progress mb-2">
                         <div class="progress-bar progress-bar-striped text-end pe-2 bg-danger" style="width:4%">0%
                         </div>
@@ -154,6 +154,7 @@
                             <br>
                             <input type="text" name="date" id="date" class="fw-bold" value="2023-04-20" readonly>
                         </div>
+                        <input type="hidden" name="id">
                         <div class="col text-center">
                             <input type="submit" value="Pay Now" class="btn btn-lg btn-primary">
                         </div>
@@ -177,9 +178,6 @@
                             <td>%bill_date%</td>
                             <td>%bill_amount%</td>
                             <td>%bill_payDate%</td>
-                            <td class="w-25 text-end">
-                                <button class="btn btn-sm btn-primary" data-bill-number="%bill_number%">Pay Now</button>
-                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -195,7 +193,7 @@ import { GetDoc, GetDocs, AddDoc, SetDoc } from "@/helpers/firestore";
 import { Timestamp, addDoc, collection, setDoc } from "firebase/firestore";
 import moment from "moment"
 import { InsertChildrenIntoParentElement } from "@/helpers/DOM";
-import { GetDateString } from "@/helpers/common";
+import { GetDateString, GetCurrency } from "@/helpers/common";
 
 // bind project data
 
@@ -233,7 +231,7 @@ async function setProjectDocuments(parentNodeId, projectId) {
 }
 
 async function SetProjectContractDetails(projectId, userId) {
-    const userProjectContract = await GetDoc(`projects/${projectId}/signers/${auth.currentUser.uid}`)
+    const userProjectContract = await GetDoc(`projects/${projectId}/signers/${userId}`)
     const {signDate, receivingProjectDate, expiryDate} = userProjectContract
     document.querySelector("#contract_signDate").textContent = GetDateString(signDate.toDate())
     document.querySelector("#contract_doneDate").textContent = GetDateString(receivingProjectDate.toDate())
@@ -241,11 +239,46 @@ async function SetProjectContractDetails(projectId, userId) {
 }
 
 async function SetProjectBillsDetails(projectId, userId) {
+    const bills = await GetDocs(`projects/${projectId}/signers/${userId}/bills`)
 
+    const unpaidBills = bills.filter(bill => bill.payDate === undefined)
+    const unpaidBillsAmount = unpaidBills.reduce((pre, cur) => pre + cur.amount, 0)
+
+    const paidBills = bills.filter(bill => bill.payDate !== undefined)
+    const paidBillsAmount = paidBills.reduce((pre, cur) => pre + cur.amount, 0)
+    
+    const lateUnpaidBills = unpaidBills.filter(bill => moment(bill.date.toDate()).isBefore(new Date()))
+
+    // bind bills summery details
+    document.querySelector("#bill_billsPaidCount").textContent = paidBills.length + " bill/s"
+    document.querySelector("#bill_billsRemainCount").textContent = unpaidBills.length + " bill/s"
+
+    document.querySelector("#bill_billsPaidAmount").textContent = GetCurrency(paidBillsAmount)
+    document.querySelector("#bill_billsRemainAmount").textContent = GetCurrency(unpaidBillsAmount)
+
+    // if there's late bill, bind the bill payment form otherwise remove it
+    const firstUnpaidBill = lateUnpaidBills[0]
+    const form_billPayment = document.querySelector("#form_billPayment")
+    if (firstUnpaidBill) {
+        form_billPayment.amount.value = GetCurrency(firstUnpaidBill.amount)
+        form_billPayment.date.value = GetDateString(firstUnpaidBill.date.toDate())
+        form_billPayment.id.value = firstUnpaidBill.id
+    } else {
+        form_billPayment.remove()
+    }
+
+    // bind the paid bills
+    InsertChildrenIntoParentElement("tbody_bills", paidBills, (placeholderHtml, child) => {
+        placeholderHtml = placeholderHtml.replaceAll("%bill_number%", child.number)
+        placeholderHtml = placeholderHtml.replaceAll("%bill_date%", GetDateString(child.date.toDate()))
+        placeholderHtml = placeholderHtml.replaceAll("%bill_amount%", GetCurrency(child.amount))
+        placeholderHtml = placeholderHtml.replaceAll("%bill_payDate%", GetDateString(child.payDate.toDate()))
+        return placeholderHtml
+    })
 }
 
 async function SetProjectStatus(projectId, userId) {
-    const bills = await GetDocs(`projects/${projectId}/signers/${auth.currentUser.uid}/bills`)
+    const bills = await GetDocs(`projects/${projectId}/signers/${userId}/bills`)
 
     const unpaidBills = bills.filter(bill => bill.payDate === undefined)
     const paidBills = bills.filter(bill => bill.payDate !== undefined)
@@ -263,6 +296,7 @@ async function SetProjectStatus(projectId, userId) {
         status = 1
     }
     
+    document.querySelector(`[data-project-status-${status}]`).classList.remove("d-none")
     document.querySelector(`[data-project-status-${status}] .progress-bar`).style.width = progress + "%"
     document.querySelector(`[data-project-status-${status}] .progress-bar`).textContent = progress + "%"
 }
@@ -281,7 +315,7 @@ async function SignProjectContract(projectId, userId) {
 
     // inilize bills
     const bills = []
-    const monthlyPayment = (Number(project.cost) / Number(project.duration)).toFixed(2)
+    const monthlyPayment = Number(project.cost) / Number(project.duration)
     for (let i = 0; i < Number(project.duration); i++) {
         const bill = {
             number: i + 1,
@@ -345,6 +379,19 @@ export default {
                 window.loading(true)
                 await SignProjectContract(projectId, auth.currentUser.uid)
                 location.reload()
+            })
+        }
+
+        // pay late bills
+        const form_billPayment = document.querySelector("#form_billPayment")
+        if (form_billPayment) {
+            form_billPayment.addEventListener("submit", async e=> {
+                e.preventDefault()
+                console.log(form_billPayment.amount.value);
+                console.log(form_billPayment.date.value);
+                console.log(form_billPayment.id.value);
+                const bill = await GetDoc(`projects/${projectId}/signers/${auth.currentUser.uid}/bills/${form_billPayment.id.value}`)
+                console.log(bill);
             })
         }
     }
