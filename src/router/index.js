@@ -24,6 +24,11 @@ const router = createRouter({
       component: () => import('../views/VerifyEmail.vue')
     },
     {
+      path: '/user/projects',
+      name: 'user-projects',
+      component: () => import('../views/user/Projects.vue')
+    },
+    {
       path: '/admin/projects',
       name: 'admin-projects',
       component: () => import('../views/admin/Projects.vue')

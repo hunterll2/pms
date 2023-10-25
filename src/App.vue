@@ -16,14 +16,14 @@ import { RouterView } from 'vue-router'
               <i class="fa-solid fa-diagram-project me-2"></i>
               Projects
             </a>
-            <a href="/2" class="list-group-item list-group-item-action">
+            <a href="/user/projects" class="list-group-item list-group-item-action">
               <i class="fa-solid fa-file-signature me-2"></i>
               Signed Projects
             </a>
           </div>
 
-          <div class="ps-2 pt-3 mb-1 text-muted" data-only-admin>Admin</div>
-          <div class="list-group" data-only-admin>
+          <div class="ps-2 pt-3 mb-1 text-muted d-none" data-only-admin>Admin</div>
+          <div class="list-group d-none" data-only-admin>
             <a href="/admin/users" class="list-group-item list-group-item-action">
               <i class="fa-solid fa-users-gear me-2"></i>
               Users
@@ -45,8 +45,8 @@ import { RouterView } from 'vue-router'
             <i class="fas fa-bars text-white py-1"></i>
           </button>
           <div class="d-flex align-items-center text-white d-none" id="loading">
-              <div class="spinner-border"></div>
-              <span class="ms-2">Loading...</span>
+            <div class="spinner-border"></div>
+            <span class="ms-2">Loading...</span>
           </div>
 
           <div class="ms-auto d-flex align-items-center column-gap-3">

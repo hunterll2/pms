@@ -9,7 +9,7 @@
  * @example
  * InsertChildrenIntoParentElement('parent', ['child1', 'child2'], (placeholder, child) => `<div>${child}</div>`);
  */
-export function InsertChildrenIntoParentElement(parentNodeId, children, callback) {
+export async function InsertChildrenIntoParentElement(parentNodeId, children, callback) {
     const parentNode = document.getElementById(parentNodeId)
     const placeholderHtml = parentNode.children[0].outerHTML
 
@@ -21,7 +21,8 @@ export function InsertChildrenIntoParentElement(parentNodeId, children, callback
     }
 
     for (const child of children) {
-        const html = callback(placeholderHtml, child)
+        const html = await callback(placeholderHtml, child)
+        
         // after getting the html of the item, insert it into the end of the parentNode
         parentNode.insertAdjacentHTML("afterbegin", html)
     }

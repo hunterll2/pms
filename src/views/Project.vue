@@ -142,17 +142,22 @@
                     <div id="bill_billsRemainAmount" class="col-md-3 col-6">[N] SR</div>
                 </div>
 
-                <form id="form_billPayment" action="#" class="alert-form my-5">
+                <form id="form_billPayment" action="#" class="alert alert-light shadow my-5">
                     <div class="row align-items-center">
+                        <div class="col text-center">
+                            <label class="form-label">Bill number</label>
+                            <br>
+                            <input type="text" name="number" id="number" class="form-control text-center fw-bold" value="1" readonly>
+                        </div>
                         <div class="col text-center">
                             <label class="form-label">Bill amount</label>
                             <br>
-                            <input type="text" name="amount" id="amount" class="fw-bold" value="1,000 SR" readonly>
+                            <input type="text" name="amount" id="amount" class="form-control text-center fw-bold" value="1,000 SR" readonly>
                         </div>
                         <div class="col text-center">
                             <label class="form-label">Bill date</label>
                             <br>
-                            <input type="text" name="date" id="date" class="fw-bold" value="2023-04-20" readonly>
+                            <input type="text" name="date" id="date" class="form-control text-center fw-bold" value="2023-04-20" readonly>
                         </div>
                         <input type="hidden" name="id">
                         <div class="col text-center">
@@ -183,17 +188,61 @@
                 </table>
             </div>
         </div>
+
+        <!-- ==================== Credit Card Payment Modal ==================== -->
+        <div class="modal" id="div_modal_creditCardPayment" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="modal-title fs-5 fw-bold">Payment</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="#" id="modal_creditCardPayment_form" novalidate>
+                        <div class="modal-body d-flex flex-column row-gap-3">
+                            <div>
+                                <label for="nameOnCard" class="form-label">Name on card</label>
+                                <input type="text" id="nameOnCard" name="nameOnCard" class="form-control" required>
+                            </div>
+                            <div>
+                                <label for="cardNumber" class="form-label">Card Number</label>
+                                <input type="text" id="cardNumber" name="cardNumber" class="form-control"
+                                    placeholder="xxxx xxxx xxxx xxxx" minlength="16" maxlength="16" required>
+                            </div>
+                            <div>
+                                <label for="cardExpirationDate" class="form-label">Expiration date</label>
+                                <input type="date" id="cardExpirationDate" name="cardExpirationDate" class="form-control" required>
+                            </div>
+                            <div>
+                                <label for="cardSecurityNumber" class="form-label">CVV/CVC</label>
+                                <input type="text" id="cardSecurityNumber" name="cardSecurityNumber" class="form-control"
+                                    placeholder="xxx" minlength="3" maxlength="3" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success" id="submitBtn">
+                                <span class="spinner-border spinner-border-sm d-none"></span>
+                                Pay Bill <b></b>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
 import { auth, storage } from "@/plugins/firebase";
+
 import { ref, listAll, getDownloadURL } from "firebase/storage";
-import { GetDoc, GetDocs, AddDoc, SetDoc } from "@/helpers/firestore";
-import { Timestamp, addDoc, collection, setDoc } from "firebase/firestore";
-import moment from "moment"
+import { Timestamp } from "firebase/firestore";
+
+import { GetDoc, GetDocs, AddDoc, SetDoc, UpdateDoc } from "@/helpers/firestore";
 import { InsertChildrenIntoParentElement } from "@/helpers/DOM";
 import { GetDateString, GetCurrency } from "@/helpers/common";
+
+import moment from "moment"
 
 // bind project data
 
@@ -202,8 +251,8 @@ function setProjectDetails(project) {
 
     document.querySelector("#project_name").textContent = name
     document.querySelector("#project_company").textContent = company
-    document.querySelector("#project_duration").textContent = duration
-    document.querySelector("#project_cost").textContent = cost
+    document.querySelector("#project_duration").textContent = duration + " Month/s"
+    document.querySelector("#project_cost").textContent = GetCurrency(cost)
     document.querySelector("#project_description").textContent = description ? description : ""
 }
 
@@ -256,10 +305,11 @@ async function SetProjectBillsDetails(projectId, userId) {
     document.querySelector("#bill_billsPaidAmount").textContent = GetCurrency(paidBillsAmount)
     document.querySelector("#bill_billsRemainAmount").textContent = GetCurrency(unpaidBillsAmount)
 
-    // if there's late bill, bind the bill payment form otherwise remove it
+    // if there's late bill, bind the bill payment form, otherwise remove it
     const firstUnpaidBill = lateUnpaidBills[0]
     const form_billPayment = document.querySelector("#form_billPayment")
     if (firstUnpaidBill) {
+        form_billPayment.number.value = firstUnpaidBill.number
         form_billPayment.amount.value = GetCurrency(firstUnpaidBill.amount)
         form_billPayment.date.value = GetDateString(firstUnpaidBill.date.toDate())
         form_billPayment.id.value = firstUnpaidBill.id
@@ -297,7 +347,7 @@ async function SetProjectStatus(projectId, userId) {
     }
     
     document.querySelector(`[data-project-status-${status}]`).classList.remove("d-none")
-    document.querySelector(`[data-project-status-${status}] .progress-bar`).style.width = progress + "%"
+    document.querySelector(`[data-project-status-${status}] .progress-bar`).style.width = (progress < 5 ? 5 : progress) + "%"
     document.querySelector(`[data-project-status-${status}] .progress-bar`).textContent = progress + "%"
 }
 
@@ -349,13 +399,13 @@ export default {
         window.loading(true)
         const project = await GetDoc(`projects/${projectId}`)
 
-        // setProjectDetails(project)
+        setProjectDetails(project)
 
         window.loading(true, "Loading project documents...")
         // await setProjectDocuments("tbody_projectDocuments", projectId)
-        window.loading(false)
 
         // # check if user already sign the contract of the project or not
+        window.loading(true, "checking user status...")
         let isCurrentUserSignedTheProject = await GetDoc(`projects/${projectId}/signers/${auth.currentUser.uid}`) !== null
 
         const onlySignedElements = document.querySelectorAll("[data-signed-only]")
@@ -365,9 +415,10 @@ export default {
             for (const element of onlyNotSignedElements) element.remove()
             for (const element of onlySignedElements) element.classList.remove("d-none")
 
+            window.loading(true, "Loading project contract...")
+            await SetProjectStatus(projectId, auth.currentUser.uid)
             await SetProjectContractDetails(projectId, auth.currentUser.uid)
             await SetProjectBillsDetails(projectId, auth.currentUser.uid)
-            await SetProjectStatus(projectId, auth.currentUser.uid)
         } else {
             for (const element of onlySignedElements) element.remove()
         }
@@ -376,7 +427,7 @@ export default {
         const btn_applyToProject = document.querySelector("#btn_applyToProject")
         if (btn_applyToProject) {
             btn_applyToProject.addEventListener("click", async e => {
-                window.loading(true)
+                window.loading(true, "Signing project contract...")
                 await SignProjectContract(projectId, auth.currentUser.uid)
                 location.reload()
             })
@@ -385,15 +436,35 @@ export default {
         // pay late bills
         const form_billPayment = document.querySelector("#form_billPayment")
         if (form_billPayment) {
-            form_billPayment.addEventListener("submit", async e=> {
+            form_billPayment.addEventListener("submit", e=> {
                 e.preventDefault()
-                console.log(form_billPayment.amount.value);
-                console.log(form_billPayment.date.value);
-                console.log(form_billPayment.id.value);
-                const bill = await GetDoc(`projects/${projectId}/signers/${auth.currentUser.uid}/bills/${form_billPayment.id.value}`)
-                console.log(bill);
+
+                const creditCardPaymentModal = new bootstrap.Modal('#div_modal_creditCardPayment')
+                const billAmountRef = creditCardPaymentModal._element.querySelector("form [type='submit'] b")
+                
+                billAmountRef.textContent = form_billPayment.amount.value
+                
+                creditCardPaymentModal.show()
+            })
+            
+            const creditCardPaymentForm = document.querySelector("#div_modal_creditCardPayment form")
+            creditCardPaymentForm.addEventListener("submit", async e => {
+                e.preventDefault()
+                const {id, number, amount, date} = form_billPayment
+
+                creditCardPaymentForm.submitBtn.disabled = true
+                creditCardPaymentForm.submitBtn.querySelector(".spinner-border").classList.remove("d-none")
+                
+                await UpdateDoc(`projects/${projectId}/signers/${auth.currentUser.uid}/bills/${id.value}`, {
+                    payDate: new Date()
+                })
+
+                location.reload()
             })
         }
+
+        // end loading
+        window.loading(false)
     }
 }
 </script>

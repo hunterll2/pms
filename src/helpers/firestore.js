@@ -1,5 +1,5 @@
 import { db } from "@/plugins/firebase";
-import { doc, getDoc, getDocs, addDoc, setDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, getDocs, addDoc, setDoc, updateDoc, collection } from 'firebase/firestore';
 
 /**
  * Fetches a document from a Firestore collection.
@@ -61,6 +61,21 @@ export async function GetDocs(path) {
 export function SetDoc(path, data) {
     const docRef = doc(db, path)
     return setDoc(docRef, data)
+}
+
+/**
+ * Update data of a document in a Firestore collection.
+ *
+ * @param {string} path - The path to the Firestore document.
+ * @param {Object} data - The data to be updated in the document.
+ * @returns {Promise<void>} A promise that resolves when the data has been updated.
+ *
+ * @example
+ * UpdateDoc('users/user1', { name: 'John Doe', email: 'john.doe@example.com' });
+ */
+export function UpdateDoc(path, data) {
+    const docRef = doc(db, path)
+    return updateDoc(docRef, data)
 }
 
 /**
