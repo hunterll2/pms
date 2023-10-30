@@ -14,6 +14,31 @@
                         <th width="200"></th>
                     </tr>
                 </thead>
+                <tbody class="placeholder-glow" data-placeholder>
+                    <tr>
+                        <td>
+                            <span class="placeholder col-12"></span>
+                        </td>
+                        <td>
+                            <span class="placeholder col-12"></span>
+                        </td>
+                        <td>
+                            <span class="placeholder col-12"></span>
+                        </td>
+                        <td>
+                            <span class="placeholder col-12"></span>
+                        </td>
+                        <td>
+                            <span class="placeholder col-12"></span>
+                        </td>
+                        <td>
+                            <span class="placeholder col-12"></span>
+                        </td>
+                        <td class="text-end">
+                            <a href="#" class="btn btn-sm placeholder col-6"></a>
+                        </td>
+                    </tr>
+                </tbody>
                 <tbody id="tbody_signedProjects">
                     <tr>
                         <td>%project_name%</td>
@@ -53,7 +78,7 @@ async function GetProjectBills(projectId, userId) {
 function GetBillsStats(bills) {
     const paidBills = bills.filter(bill => bill.payDate !== undefined)
     const paidBillsAmount = paidBills.reduce((pre, cur) => pre + cur.amount, 0)
-    
+
     const unpaidBills = bills.filter(bill => bill.payDate === undefined)
     const unpaidBillsAmount = unpaidBills.reduce((pre, cur) => pre + cur.amount, 0)
 
@@ -62,7 +87,7 @@ function GetBillsStats(bills) {
 
 export default {
     async mounted() {
-        window.loading(true)
+        window.loading(true, "Loading...", true)
 
         onAuthStateChanged(auth, async user => {
             if (user) {

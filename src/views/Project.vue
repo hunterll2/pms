@@ -1,5 +1,53 @@
 <template>
     <div class="d-flex flex-column row-gap-5">
+        <!-- Placeholder Card -->
+        <div class="card shadow placeholder-glow" data-placeholder>
+            <div class="card-header py-3 d-flex">
+                <h5 class="placeholder col-4 me-auto"></h5>
+                <button class="btn placeholder col-2"></button>
+            </div>
+
+            <div class="card-body">
+                <p class="card-text placeholder-glow">
+                    <span class="placeholder col-7"></span>
+                    <span class="placeholder col-4"></span>
+                    <span class="placeholder col-4"></span>
+                    <span class="placeholder col-6"></span>
+                    <span class="placeholder col-8"></span>
+                </p>
+
+                <div class="row">
+                    <div class="col-md-9 col-6"><span class="placeholder col-8"></span></div>
+                    <div class="col-md-3 col-6"><span class="placeholder col-8"></span></div>
+                </div>
+                <hr class="text-muted">
+                <div class="row">
+                    <div class="col-md-9 col-6"><span class="placeholder col-8"></span></div>
+                    <div class="col-md-3 col-6"><span class="placeholder col-8"></span></div>
+                </div>
+                <hr class="text-muted">
+                <div class="row">
+                    <div class="col-md-9 col-6"><span class="placeholder col-8"></span></div>
+                    <div class="col-md-3 col-6"><span class="placeholder col-8"></span></div>
+                </div>
+                <hr class="text-muted">
+
+                <h5 class="mt-5 fw-normal placeholder col-4"></h5>
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <td>
+                                <span class="placeholder col-8"></span>
+                            </td>
+                            <td class="text-end">
+                                <a href="#" target="_blank" class="btn btn-sm placeholder col-2"></a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- ==================== Project Data ==================== -->
         <div class="card shadow">
             <div class="card-header py-3 d-flex">
@@ -9,9 +57,14 @@
                     <i class="fas fa-file-signature me-2"></i>
                     <span>Apply To This Project</span>
                 </button>
-                <button class="btn btn-success disabled" data-signed-only>
-                    <i class="fas fa-file-signature me-2"></i>
-                    <span>You Have Applied To This Project</span>
+
+                <button class="btn btn-danger me-2" data-signed-only>
+                    <i class="fas fa-times me-2"></i>
+                    <span>Request cancelation</span>
+                </button>
+                <button class="btn btn-info" data-signed-only>
+                    <i class="fas fa-edit"></i>
+                    <span>Request custom edit</span>
                 </button>
             </div>
 
@@ -114,6 +167,41 @@
                     <div class="col-md-9 col-6 fw-bold">Date receiving the project</div>
                     <div id="contract_doneDate" class="col-md-3 col-6">yyyy/MM/dd</div>
                 </div>
+
+                <!-- custom edits -->
+                <div class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+                        <h5 class="fw-normal">Custom requests</h5>
+                        <button type="button" class="btn btn-link">Display Details</button>
+                    </div>
+                    <hr class="text-muted">
+                    <div class="row">
+                        <div class="col-md-9 col-6 fw-bold">Number of custom requests</div>
+                        <div id="contract_signDate" class="col-md-3 col-6">3</div>
+                    </div>
+                    <hr class="text-muted">
+                    <div class="row">
+                        <div class="col-md-9 col-6 fw-bold">Increase of cost</div>
+                        <div id="contract_signDate" class="col-md-3 col-6">600 SR</div>
+                    </div>
+                    <hr class="text-muted">
+                    <div class="row">
+                        <div class="col-md-9 col-6 fw-bold">Increase of time</div>
+                        <div id="contract_signDate" class="col-md-3 col-6">1 Month</div>
+                    </div>
+
+                    <h5 class="mt-5 mb-3 fw-normal">Edited contract</h5>
+                    <hr class="text-muted">
+                    <div class="row">
+                        <div class="col-md-9 col-6 fw-bold">Total Cost</div>
+                        <div id="contract_signDate" class="col-md-3 col-6">2,600 SR</div>
+                    </div>
+                    <hr class="text-muted">
+                    <div class="row">
+                        <div class="col-md-9 col-6 fw-bold">Date receiving the project</div>
+                        <div id="contract_signDate" class="col-md-3 col-6">yyyy/MM/dd</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -147,17 +235,20 @@
                         <div class="col text-center">
                             <label class="form-label">Bill number</label>
                             <br>
-                            <input type="text" name="number" id="number" class="form-control text-center fw-bold" value="1" readonly>
+                            <input type="text" name="number" id="number" class="form-control text-center fw-bold" value="1"
+                                readonly>
                         </div>
                         <div class="col text-center">
                             <label class="form-label">Bill amount</label>
                             <br>
-                            <input type="text" name="amount" id="amount" class="form-control text-center fw-bold" value="1,000 SR" readonly>
+                            <input type="text" name="amount" id="amount" class="form-control text-center fw-bold"
+                                value="1,000 SR" readonly>
                         </div>
                         <div class="col text-center">
                             <label class="form-label">Bill date</label>
                             <br>
-                            <input type="text" name="date" id="date" class="form-control text-center fw-bold" value="2023-04-20" readonly>
+                            <input type="text" name="date" id="date" class="form-control text-center fw-bold"
+                                value="2023-04-20" readonly>
                         </div>
                         <input type="hidden" name="id">
                         <div class="col text-center">
@@ -210,7 +301,8 @@
                             </div>
                             <div>
                                 <label for="cardExpirationDate" class="form-label">Expiration date</label>
-                                <input type="date" id="cardExpirationDate" name="cardExpirationDate" class="form-control" required>
+                                <input type="date" id="cardExpirationDate" name="cardExpirationDate" class="form-control"
+                                    required>
                             </div>
                             <div>
                                 <label for="cardSecurityNumber" class="form-label">CVV/CVC</label>
@@ -281,7 +373,7 @@ async function setProjectDocuments(parentNodeId, projectId) {
 
 async function SetProjectContractDetails(projectId, userId) {
     const userProjectContract = await GetDoc(`projects/${projectId}/signers/${userId}`)
-    const {signDate, receivingProjectDate, expiryDate} = userProjectContract
+    const { signDate, receivingProjectDate, expiryDate } = userProjectContract
     document.querySelector("#contract_signDate").textContent = GetDateString(signDate.toDate())
     document.querySelector("#contract_doneDate").textContent = GetDateString(receivingProjectDate.toDate())
     document.querySelector("#contract_expiryDate").textContent = GetDateString(expiryDate.toDate())
@@ -295,7 +387,7 @@ async function SetProjectBillsDetails(projectId, userId) {
 
     const paidBills = bills.filter(bill => bill.payDate !== undefined)
     const paidBillsAmount = paidBills.reduce((pre, cur) => pre + cur.amount, 0)
-    
+
     const lateUnpaidBills = unpaidBills.filter(bill => moment(bill.date.toDate()).isBefore(new Date()))
 
     // bind bills summery details
@@ -340,12 +432,12 @@ async function SetProjectStatus(projectId, userId) {
     // there's late bills ? then project in "stop" state (0)
     if (lateUnpaidBills.length > 0) {
         status = 0
-    } 
+    }
     // there's still unpaid bills ? then project in "in progress" state (1)
     else if (unpaidBills.length > 0) {
         status = 1
     }
-    
+
     document.querySelector(`[data-project-status-${status}]`).classList.remove("d-none")
     document.querySelector(`[data-project-status-${status}] .progress-bar`).style.width = (progress < 5 ? 5 : progress) + "%"
     document.querySelector(`[data-project-status-${status}] .progress-bar`).textContent = progress + "%"
@@ -388,15 +480,12 @@ async function SignProjectContract(projectId, userId) {
 
 export default {
     async mounted() {
-        // before check if user is signed the current project or not, make sure all only-signed elements are hidden
-        for (const el of document.querySelectorAll("[data-signed-only]"))
-            el.classList.add("d-none")
+        window.loading(true, "Loading...", true)
 
         // Load project data
         const urlParams = new URLSearchParams(location.search)
         const projectId = urlParams.get("id")
 
-        window.loading(true)
         const project = await GetDoc(`projects/${projectId}`)
 
         setProjectDetails(project)
@@ -413,7 +502,6 @@ export default {
 
         if (isCurrentUserSignedTheProject) {
             for (const element of onlyNotSignedElements) element.remove()
-            for (const element of onlySignedElements) element.classList.remove("d-none")
 
             window.loading(true, "Loading project contract...")
             await SetProjectStatus(projectId, auth.currentUser.uid)
@@ -436,25 +524,25 @@ export default {
         // pay late bills
         const form_billPayment = document.querySelector("#form_billPayment")
         if (form_billPayment) {
-            form_billPayment.addEventListener("submit", e=> {
+            form_billPayment.addEventListener("submit", e => {
                 e.preventDefault()
 
                 const creditCardPaymentModal = new bootstrap.Modal('#div_modal_creditCardPayment')
                 const billAmountRef = creditCardPaymentModal._element.querySelector("form [type='submit'] b")
-                
+
                 billAmountRef.textContent = form_billPayment.amount.value
-                
+
                 creditCardPaymentModal.show()
             })
-            
+
             const creditCardPaymentForm = document.querySelector("#div_modal_creditCardPayment form")
             creditCardPaymentForm.addEventListener("submit", async e => {
                 e.preventDefault()
-                const {id, number, amount, date} = form_billPayment
+                const { id, number, amount, date } = form_billPayment
 
                 creditCardPaymentForm.submitBtn.disabled = true
                 creditCardPaymentForm.submitBtn.querySelector(".spinner-border").classList.remove("d-none")
-                
+
                 await UpdateDoc(`projects/${projectId}/signers/${auth.currentUser.uid}/bills/${id.value}`, {
                     payDate: new Date()
                 })

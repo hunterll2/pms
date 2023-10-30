@@ -71,10 +71,22 @@ import { auth, db } from "@/plugins/Firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-window.loading = function (status, message = "Loading...") {
+window.loading = function (status, message = "Loading...", usePlaceholder = false) {
   const method = status ? "remove" : "add"
   document.querySelector("#loading").classList[method]("d-none")
   document.querySelector("#loading > span").textContent = message
+
+  if (usePlaceholder && status) {
+    const allNonPlaceholders = document.querySelectorAll("[data-placeholder] ~ *")
+    for (const el of allNonPlaceholders) el.classList.add("d-none")
+  }
+  else if (!status) {
+    const allNonPlaceholders = document.querySelectorAll("[data-placeholder] ~ *")
+    for (const el of allNonPlaceholders) el.classList.remove("d-none")
+
+    const allPlaceholders = document.querySelectorAll("[data-placeholder]")
+    for (const el of allPlaceholders) el.classList.add("d-none")
+  }
 }
 
 export default {

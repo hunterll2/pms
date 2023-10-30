@@ -75,7 +75,12 @@ async function loadProjects(parentNode, projectsCollectionRef) {
             <div class="card-header text-bg-primary bg-gradient">
               %project_name%
             </div>
-            <img src="%project_image%" alt="alt" width="100%" height="auto" style="aspect-ratio: 1/1;">
+            <div class="position-relative">
+              <div class="position-absolute top-50 start-50 translate-middle" style="z-index:1">
+                <div class="spinner-border text-primary"></div>
+              </div>
+              <img src="%project_image%" alt="alt" width="100%" height="auto" style="aspect-ratio: 1/1;z-index:2;position:relative;">
+            </div>
             <div class="card-body">
               <p class="card-text">
                 %project_description%

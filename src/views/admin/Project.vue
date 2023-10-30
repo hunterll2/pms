@@ -34,6 +34,9 @@
                         <label for="image" class="form-label">Project Imae</label>
                         <input type="file" name="image" id="image" class="form-control" accept=".jpg,.jpeg,.png">
                     </div>
+                    <div id="div_projectImage" class="col-12 mt-2 d-none">
+                        <img src="" alt="Project image" class="w-25" />
+                    </div>
                 </div>
 
                 <h2 class="h6 mt-3">Project Documents</h2>
@@ -92,6 +95,14 @@ function bindProject(form, project) {
     form.duration.value = project.duration
     form.cost.value = project.cost
     form.description.value = project.description ? project.description : ""
+
+    const div_projectImage = document.querySelector("#div_projectImage")
+    const img_projectImage = div_projectImage.querySelector("img")
+
+    if (project.imageUrl) {
+        div_projectImage.classList.remove("d-none")
+        img_projectImage.src = project.imageUrl
+    }
 }
 
 function DisplayAlert(type, message) {
@@ -133,7 +144,7 @@ async function loadProjectDocuments(parentNode, projectId) {
     const items = []
     for (const itemRef of listResult.items) {
         if (itemRef.name === "image") continue
-        
+
         const downloadUrl = await getDownloadURL(itemRef)
         items.push({
             name: itemRef.name,
@@ -158,20 +169,19 @@ async function loadProjectDocuments(parentNode, projectId) {
 async function uploadDocument(projectId, file, progressBar) {
     const storageRef = ref(storage, `${projectId}/${file.name}`)
 
-    // await uploadBytes(storageRef, file)
-    // DisplayAlert("success", "File uploaded successfuly.")
-
     const uploadTask = uploadBytesResumable(storageRef, file)
 
-    uploadTask.on("state_changed", (snapshot) => {
-        const progess = Math.floor((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
-        progressBar.style.width = progess <= 0 ? "5%" : `${progess}%`
-        progressBar.textContent = `${progess}%`
-    }, error => {
-        DisplayAlert("danger", error.message)
-    }, () => {
-        DisplayAlert("success", "File uploaded successfuly.")
-        progressBar.style.width = "0%"
+    return new Promise((resolve, reject) => {
+        uploadTask.on("state_changed", (snapshot) => {
+            const progess = Math.floor((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+            progressBar.style.width = progess <= 0 ? "5%" : `${progess}%`
+            progressBar.textContent = `${progess}%`
+        }, error => {
+            reject(error.message)
+        }, () => {
+            resolve("File uploaded successfuly.")
+        })
+
     })
 }
 
@@ -212,7 +222,7 @@ export default {
 
             // if suer choose image, upload it and then get its url
             const projectImageFile = form.image.files[0]
-            let imageUrl = ""
+            let imageUrl = undefined
             if (projectImageFile) {
                 if (!["image/jpg", "image/jpeg", "image/png"].includes(projectImageFile.type)) {
                     DisplayAlert("danger", "Project image must be jpg, jpeg, or png only.")
@@ -228,14 +238,18 @@ export default {
             }
 
             try {
-                await updateDoc(projectDocRef, {
+                const updateObject = {
                     name: form.name.value,
                     company: form.company.value,
                     duration: Number(form.duration.value),
                     cost: Number(form.cost.value),
                     description: form.description.value,
-                    imageUrl: imageUrl
-                })
+                }
+
+                if (imageUrl)
+                    updateObject.imageUrl = imageUrl
+
+                await updateDoc(projectDocRef, updateObject)
 
                 DisplayAlert("success", "The changes has been saved successfuly.")
             } catch (error) {
@@ -282,7 +296,12 @@ export default {
                 return
             }
 
-            await uploadDocument(projectSnapshot.id, form.input_uploadDocument.files[0], progressBar)
+            try {
+                const successMessage = await uploadDocument(projectSnapshot.id, form.input_uploadDocument.files[0], progressBar)
+                DisplayAlert("success", successMessage)
+            } catch (error) {
+                DisplayAlert("danger", error)
+            }
 
             progressBar.style.width = "0%"
         })
