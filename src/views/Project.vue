@@ -62,7 +62,8 @@
                     <i class="fas fa-times me-2"></i>
                     <span>Request cancelation</span>
                 </button>
-                <button class="btn btn-info" data-signed-only>
+                <button class="btn btn-info" data-signed-only data-bs-toggle="modal"
+                    data-bs-target="#div_modal_customRequest">
                     <i class="fas fa-edit"></i>
                     <span>Request custom edit</span>
                 </button>
@@ -169,7 +170,7 @@
                 </div>
 
                 <!-- custom edits -->
-                <div class="d-none">
+                <div class="">
                     <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
                         <h5 class="fw-normal">Custom requests</h5>
                         <button type="button" class="btn btn-link">Display Details</button>
@@ -321,6 +322,80 @@
                 </div>
             </div>
         </div>
+
+        <!-- ==================== Credit Card Payment Modal ==================== -->
+        <div class="modal fade" id="div_modal_customRequest" data-bs-backdrop="static"
+            data-bs-keyboard="false">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="modal-title fs-5 fw-bold">Custom Reqeust</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="#" id="modal_customRequest_form" novalidate>
+                        <div class="modal-body d-flex flex-column row-gap-3">
+                            <div class="d-flex">
+                                <i class="fas fa-user fs-1 text-secondary me-3"></i>
+                                <div class="bg-success-subtle border p-3 rounded-end shadow-sm">
+                                    Lorem ipsum dolor, sit amet consectetur adipisicing elit. Omnis doloremque, quae
+                                    adipisci in corporis, iure non voluptatibus quibusdam itaque quas hic sequi delectus ea
+                                    ullam eos accusamus reiciendis praesentium aut.
+                                </div>
+                            </div>
+                            <div class="d-flex">
+                                <div class="bg-primary-subtle border p-3 rounded-start shadow-sm">
+                                    Lorem ipsum dolor, sit amet consectetur adipisicing elit. Omnis doloremque, quae
+                                    adipisci in corporis, iure non voluptatibus quibusdam itaque quas hic sequi delectus ea
+                                    ullam eos accusamus reiciendis praesentium aut.
+                                </div>
+                                <i class="fas fa-user fs-1 text-secondary ms-3"></i>
+                            </div>
+
+                            <div>
+                                <div class="bg-warning-subtle border p-3 rounded w-100 shadow-sm">
+                                    <p>
+                                        Wolud you like to apply the requested edit for <span
+                                            class="text-success fw-bold">+300 SR</span> increase in project cost?
+                                        And if so, it will extened the project duration by <span
+                                            class="text-success fw-bold">+14 Days</span>.
+                                    </p>
+                                    <div class="input-group d-flex justify-content-center">
+                                        <button type="button" class="btn btn-danger disabled">Decline</button>
+                                        <button type="button" class="btn btn-primary px-4 fw-bold disabled">Accept</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <h6 class="text-danger">Offer Declined</h6>
+
+
+                            <div>
+                                <div class="bg-warning-subtle border p-3 rounded w-100 shadow-sm">
+                                    <p>
+                                        Wolud you like to apply the requested edit for <span
+                                            class="text-success fw-bold">+300 SR</span> increase in project cost?
+                                        And if so, it will extened the project duration by <span
+                                            class="text-success fw-bold">+14 Days</span>.
+                                    </p>
+                                    <div class="input-group d-flex justify-content-center">
+                                        <button type="button" class="btn btn-danger disabled">Decline</button>
+                                        <button type="button" class="btn btn-primary px-4 fw-bold disabled">Accept</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <h6 class="text-success">Offer Accepted</h6>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="input-group">
+                                <textarea name="text" id="text" rows="1" class="form-control"></textarea>
+                                <button type="submit" class="btn btn-success" id="submitBtn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -410,6 +485,7 @@ async function SetProjectBillsDetails(projectId, userId) {
     }
 
     // bind the paid bills
+    paidBills.sort((a, b) => b.number - a.number)
     InsertChildrenIntoParentElement("tbody_bills", paidBills, (placeholderHtml, child) => {
         placeholderHtml = placeholderHtml.replaceAll("%bill_number%", child.number)
         placeholderHtml = placeholderHtml.replaceAll("%bill_date%", GetDateString(child.date.toDate()))
@@ -420,13 +496,22 @@ async function SetProjectBillsDetails(projectId, userId) {
 }
 
 async function SetProjectStatus(projectId, userId) {
+    const userProjectContract = await GetDoc(`projects/${projectId}/signers/${userId}`)
     const bills = await GetDocs(`projects/${projectId}/signers/${userId}/bills`)
 
     const unpaidBills = bills.filter(bill => bill.payDate === undefined)
     const paidBills = bills.filter(bill => bill.payDate !== undefined)
     const lateUnpaidBills = unpaidBills.filter(bill => moment(bill.date.toDate()).isBefore(new Date()))
 
-    const progress = Math.floor((paidBills.length / bills.length) * 100)
+    // calc progress
+    const { signDate, receivingProjectDate } = userProjectContract
+    const diffFromSignDate = moment(receivingProjectDate.toDate()).diff(signDate.toDate(), "d") // can be project duration in days also
+    let diffFromNow = moment(receivingProjectDate.toDate()).diff(new Date(), "d")
+    diffFromNow = diffFromNow < 0 ? 0 : diffFromNow
+
+    const timePercentage = ((diffFromSignDate - diffFromNow) / diffFromSignDate) * 50
+    const billsPercentage = (paidBills.length / bills.length) * 50
+    const progress = Math.floor(timePercentage + billsPercentage)
 
     let status = 2
     // there's late bills ? then project in "stop" state (0)
@@ -491,7 +576,7 @@ export default {
         setProjectDetails(project)
 
         window.loading(true, "Loading project documents...")
-        // await setProjectDocuments("tbody_projectDocuments", projectId)
+        await setProjectDocuments("tbody_projectDocuments", projectId)
 
         // # check if user already sign the contract of the project or not
         window.loading(true, "checking user status...")
