@@ -46,4 +46,3 @@ npm run build
   - `getDocs( collection("users") )` => docs
   - `getDoc( doc('users/user-1') )` => data(), exists()
   - `getDocs( query(collection("users"), where("isAdmin", "==", "true")) )` => docs
-
